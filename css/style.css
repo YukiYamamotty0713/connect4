@@ -1,0 +1,12 @@
+#wholespace
+{
+	border:1px;
+}
+#dropspace
+{
+	cursor:grab;
+}
+.cell
+{
+	border:1px solid;
+}

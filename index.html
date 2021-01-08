@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>index</title>
+        <!--Bootstrapのインストール-->
+        <link rel = "stylesheet" href ="css/style.css"/>
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <script src="js/jquery-3.3.0.slim.min.js"></script>
+        <script src="js/popper.min.js"></script>
+        <script src="js/bootstrap.min.js"></script>
+
+        <div id = "origin" style ="display:none;">
+            <img id ="column0" class = "cell" value = "0" src = "image/0.png" onclick = "dropstone(0)">
+            <img id ="column1" class = "cell" value = "1" src = "image/1.png" onclick = "dropstone(1)">
+            <img id ="column2" class = "cell" value = "2" src = "image/2.png" onclick = "dropstone(2)">
+            <img id ="column3" class = "cell" value = "3" src = "image/3.png" onclick = "dropstone(3)">
+            <img id ="column4" class = "cell" value = "4" src = "image/4.png" onclick = "dropstone(4)">
+            <img id ="column5" class = "cell" value = "5" src = "image/5.png" onclick = "dropstone(5)">
+            <img id ="column6" class = "cell" value = "6" src = "image/6.png" onclick = "dropstone(6)">
+            <img id = "blank" class ="cell" src = "image/blank.png">
+            <img id = "red" class ="cell" src = "image/red.png">
+            <img id = "yellow" class ="cell" src = "image/yellow.png">
+        </div>
+    </head>
+
+     <body>
+         <h1 id = "title">CONNECT4</h1>
+         <div id = "description">this is the game known as "CONNECT4".<br>
+             Let me show you one of my portforio and please enjoy the game if you like.<br>
+             ・This is a turn-based game, red and yellow.<br>
+             ・Pushing the cell which has number on left side only can drop stones Alternately.<br>
+             ・The one which can achieve "CONNECT4" can win the game.<br>
+             ・©Motty,2021/01/08
+         </div>
+         <br>
+         <div id = "wholespace">
+            <div id = "dropspace"></div>
+            <div id = "board"></div>
+         </div>
+         <button class="btn btn-primary" style = "margin:5px;" onclick = "ReInitialize()">Restart</button><br>
+         <textarea  id="text" cols="50" rows="12"></textarea>
+    </body>
+    <script type="text/javascript">var dropspace = document.getElementById("dropspace"); 
+
+        //初めに行う処理
+
+        var column0 = document.getElementById("column0");
+        var column1 = document.getElementById("column1");
+        var column2 = document.getElementById("column2");
+        var column3 = document.getElementById("column3");
+        var column4 = document.getElementById("column4");
+        var column5 = document.getElementById("column5");
+        var column6 = document.getElementById("column6");
+
+        //石
+        var board = document.getElementById("board");
+        var blank = document.getElementById("blank");
+        var red = document.getElementById("red");
+        var yellow = document.getElementById("yellow");
+        
+        var textlog = document.getElementById("text");
+        
+        //ターン
+        var turn = 1; //現在のターンに対応するindexが入る
+        var victory = 0; //勝利者が生じた場合、その人に対応するindexが入る。
+        const turn_color ={"1":"Red","-1":"Yellow"}
+        
+        //ボード
+        var boardarray = [
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0]]
+        
+        
+        //勝敗判定用
+        var currentRow = -1;
+        var currentColumn = -1;   
+        
+        //渡された配列からdropspaceを表示させる関数
+        function create_dropspace()
+        {         
+            dropspace.appendChild(column0.cloneNode(true));
+            dropspace.appendChild(column1.cloneNode(true));
+            dropspace.appendChild(column2.cloneNode(true));
+            dropspace.appendChild(column3.cloneNode(true));
+            dropspace.appendChild(column4.cloneNode(true));
+            dropspace.appendChild(column5.cloneNode(true));
+            dropspace.appendChild(column6.cloneNode(true));
+        } 
+        //dropspaceのマウスイベント
+
+        //ボードのViewを初期化/更新
+        function load_board(array)
+        {
+            board.innerHTML = "";
+            for (let i = 0; i < array.length; i++) {
+                for (let j = 0; j < array[i].length; j++) {
+                    if(array[i][j] == 0)
+                    {
+                        board.appendChild(blank.cloneNode(true))
+                    }                    
+                    else if(array[i][j] == 1)
+                    {
+                        board.appendChild(red.cloneNode(true))
+                    }
+                    else if(array[i][j] == -1)
+                    {
+                        board.appendChild(yellow.cloneNode(true))
+                    }
+                }
+            board.innerHTML += "<br>";
+            }
+        }
+        
+        //テキストエリアの初期化/更新
+        function load_text(turn_num)
+        {
+            textlog.value += turn_color[turn_num] +"'s turn.\n";
+        }
+
+        //初期化（ページ読み込み時)
+        window.onload = function()
+        {
+            create_dropspace();
+            load_board(boardarray);
+        }
+        
+        //石を落とす
+        function dropstone(col) //col=列番
+        {
+            //すでに決着している場合は押されても無効
+            if(victory != 0)
+            {
+                return;
+            }
+            var scopeRow = 0; //一番下の石がどこまであるか？
+               //一番上が1であれば置けない
+            if(boardarray[0][col] != 0)
+            {
+                textlog.value += "Cannnot be placed where you hit.\n"
+                exit;
+            }
+
+            while(scopeRow <= boardarray.length)
+            {
+                
+                //指定した列のどこかに石が置かれていたら
+                if(boardarray[scopeRow][col] != 0)
+                {
+                    //置石部分の1つ上に石を配置、while文章を抜ける
+                    boardarray[scopeRow-1][col] = turn; 
+                    //勝利判定のチェック用にグローバル変数に保持しておく。
+                    currentRow = scopeRow-1;
+                    currentColumn = col;
+                    break;
+                }
+                else //石が置かれていなければ次の行を見にいく。
+                {
+                    scopeRow++   
+                }       
+                //最終行まで0の場合→一番下に1を置く
+                if(boardarray[5][col] == 0)
+                {
+                    boardarray[5][col] = turn;
+                    currentRow = 5;
+                    currentColumn = col;
+                    break;
+                }
+            }
+            //textlog.value += "現在置かれた石の位置は"+currentRow+"行の、"+currentColumn+"列です。"+"\n";
+            //ボードの読み込み
+            load_board(boardarray);
+
+            //勝利判定       
+            victory = VictorysNumber(boardarray,currentRow,currentColumn);
+            if(victory != 0)
+            {
+                alert("BAN!!");
+                textlog.value += turn_color[victory] + "'s Win!\n"
+                textlog.value += "Please push Restart."
+                //再び初期化
+                //ReloadAfterVictory();
+
+            }
+            else
+            {
+                turn *= -1;    
+                load_text(turn);
+            }
+        }
+
+
+        function VictorysNumber(boardarr, Row, Col)　//ボードと現在行・現在列を引数として代入
+            //8方向を見て連続番号を管理する配列に格納していく。
+            //格納した配列をもとに、勝利かどうかを判定。
+            //→方向が0番、以降45°左回転するごとに番号を1番加算し、合計7番までの8方向を定義する。
+            {
+            var continuousNum = [0,0,0,0,0,0,0,0]//1,2,3,4,5,6,7,8番方向
+            const directionList =[
+            [0,1],//0番
+            [-1,1],//1
+            [-1,0],//2
+            [-1,-1],//3
+            [0,-1],//4
+            [1,-1],//5
+            [1,0],//6
+            [1,1]] //7
+        
+            //スコープははじめ置かれた石と同じ
+            var scopeRow = Row;
+            var scopeColumn = Col;
+
+        //スコープ開始
+  
+        for (let i = 0; i < 8; i++) {   
+            //textlog.value += "勝利判定関数の開始。ScopeRow="+scopeRow+ "、scopeColumn = " +scopeColumn +"です。\n";
+            //textlog.value += i+"番方向を見ます。";
+            while(true)
+            {
+                //与えられた方向への移動操作
+                scopeRow += directionList[i][0];
+                scopeColumn += directionList[i][1];
+                try
+                {
+                    if(0 <= scopeRow <= 5 && 0 <= scopeColumn <= 6 &&
+                        boardarr[scopeRow][scopeColumn] == boardarr[Row][Col]) //起点と今見ている場所が同じであればカウントを増やす
+                    {                       
+                        continuousNum[i]++; 
+                        //textlog.value += i +"番方向に" + continuousNum[i] + "個の連続した石が発見されました。\n";
+                    }
+                    else
+                    {
+                        //textlog.value += i +"番方向には同じ石は見つかりませんでした。\n";
+                        break; //値が同じでなければ（連番でなければ）break
+                    }
+                }
+                catch(e)
+                {
+                    break; //ボードを超えた値を参照するとエラーが出る。飛び越えてもbreak.
+                }
+            }
+            //スコープを元の位置に戻す。
+            scopeRow = Row;
+            scopeColumn = Col;
+        }
+                //勝利判定
+                if( continuousNum[0] + continuousNum[5] == 3 ||
+                continuousNum[1] + continuousNum[6] == 3 ||
+                continuousNum[2] + continuousNum[7] == 3 ||
+                continuousNum[3] + continuousNum[8] == 3 )
+                {
+                    return turn; //勝利者決定
+                }
+                else
+                {
+                    return 0; //勝負がついていない場合は0を返す。
+                }
+        }
+        
+        
+        //初期化ボタンで呼び出される関数
+        function ReInitialize()
+        {
+            boardarray = [
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0]]
+
+            turn = 1;
+            victory = 0;
+            load_board(boardarray);
+            textlog.value ="";
+            textlog.value +="Red's turn.\n"; 
+        }
+        </script>
+</html>
